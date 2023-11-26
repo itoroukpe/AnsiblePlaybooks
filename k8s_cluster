@@ -1,0 +1,126 @@
+# Creating a Kubernetes cluster using Ansible and kubeadm
+
+Creating a Kubernetes cluster using Ansible and kubeadm involves a series of tasks such as installing dependencies, configuring nodes, initializing the master, and joining worker nodes. Below is an example of an Ansible role that you can use to create a simple Kubernetes cluster using kubeadm.
+
+Please note that this is a basic example, and you may need to adjust it based on your specific environment and requirements.
+
+**Ansible Role Structure:**
+
+Create a directory structure for your Ansible role. For example:
+
+```plaintext
+roles/
+  ├── kubernetes/
+  │   ├── tasks/
+  │   │   ├── main.yml
+  │   │   ├── install_dependencies.yml
+  │   │   ├── configure_master.yml
+  │   │   ├── join_workers.yml
+  │   ├── templates/
+  │   │   ├── kubeadm-config.yaml.j2
+```
+
+**Tasks in `main.yml`:**
+
+```yaml
+# roles/kubernetes/tasks/main.yml
+
+- name: Install Kubernetes cluster
+  import_tasks: install_dependencies.yml
+
+- name: Configure Kubernetes master
+  import_tasks: configure_master.yml
+
+- name: Join worker nodes
+  import_tasks: join_workers.yml
+```
+
+**Task in `install_dependencies.yml`:**
+
+```yaml
+# roles/kubernetes/tasks/install_dependencies.yml
+
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Install kubeadm, kubelet, and kubectl
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - kubeadm
+    - kubelet
+    - kubectl
+```
+
+**Task in `configure_master.yml`:**
+
+```yaml
+# roles/kubernetes/tasks/configure_master.yml
+
+- name: Initialize Kubernetes master
+  command: kubeadm init --config={{ playbook_dir }}/templates/kubeadm-config.yaml
+  register: kubeadm_init_output
+  become: true
+
+- name: Set up kubeconfig for root
+  command: "{{ kubeadm_init_output.stdout_lines[-1] }}"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  become: true
+
+- name: Copy kubeconfig for regular user
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/admin.conf
+    remote_src: true
+  become: true
+```
+
+**Task in `join_workers.yml`:**
+
+```yaml
+# roles/kubernetes/tasks/join_workers.yml
+
+- name: Extract token and hash
+  command: kubeadm token create --print-join-command
+  register: join_command
+  become: true
+
+- name: Join worker nodes
+  command: "{{ join_command.stdout }}"
+```
+
+**Template file `kubeadm-config.yaml.j2`:**
+
+```yaml
+# roles/kubernetes/templates/kubeadm-config.yaml.j2
+
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: stable
+controlPlaneEndpoint: "your-master-ip:6443"
+```
+
+**Playbook to use the role:**
+
+```yaml
+# create_cluster.yml
+
+- hosts: kubernetes_nodes
+  become: true
+  roles:
+    - kubernetes
+```
+
+In the playbook, replace `"your-master-ip"` in the `kubeadm-config.yaml.j2` template with the IP address or hostname of your master node.
+
+**Running the Playbook:**
+
+```bash
+ansible-playbook -i your_inventory_file create_cluster.yml
+```
+
+Adjust the playbook, roles, and templates based on your environment and specific requirements. This is a basic example to get you started with creating a Kubernetes cluster using Ansible and kubeadm.

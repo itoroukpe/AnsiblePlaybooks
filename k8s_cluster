@@ -8,7 +8,7 @@ Please note that this is a basic example, and you may need to adjust it based on
 
 Create a directory structure for your Ansible role. For example:
 
-```
+```plaintext
 roles/
   ├── kubernetes/
   │   ├── tasks/

@@ -1,0 +1,45 @@
+To include target hosts in your Ansible playbook, you typically define an inventory file that lists the hostnames or IP addresses of the machines you want to manage. The inventory file can be specified using the `-i` option when running the Ansible playbook.
+
+Here's an example of how you can structure your Ansible playbook and include target hosts:
+
+1. **Create an Inventory File:**
+
+Create a file named `inventory.ini` and list the IP addresses or hostnames of your target machines:
+
+```ini
+# inventory.ini
+
+[kubernetes_nodes]
+node1 ansible_host=192.168.1.10
+node2 ansible_host=192.168.1.11
+node3 ansible_host=192.168.1.12
+```
+
+Replace the IP addresses with the actual addresses of your target machines.
+
+2. **Update the Playbook:**
+
+Update your playbook (`create_cluster.yml`) to include the inventory file:
+
+```yaml
+# create_cluster.yml
+
+- hosts: kubernetes_nodes
+  become: true
+  roles:
+    - kubernetes
+```
+
+3. **Run the Playbook:**
+
+Run the Ansible playbook, specifying the inventory file:
+
+```bash
+ansible-playbook -i inventory.ini create_cluster.yml
+```
+
+This command tells Ansible to use the hosts listed under the `[kubernetes_nodes]` group in the `inventory.ini` file.
+
+Adjust the inventory file according to your environment and replace the placeholder IP addresses with the actual addresses of your target machines.
+
+Additionally, you can use dynamic inventory scripts or external inventory systems to dynamically generate the inventory based on your infrastructure. Ansible supports various inventory plugins and dynamic inventory options for integration with cloud providers, virtualization platforms, and other systems.
